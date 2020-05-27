@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import numpy.lib.recfunctions as recfunc
 from   ROOT import TChain, TFile, TTree, TH1F
-from   root_numpy import tree2array
+#from   root_numpy import tree2array
+from Taoroot_numpy import tree2array, array2tree
 from   sklearn.model_selection import train_test_split
 from   sklearn.utils import shuffle, safe_indexing
 import tensorflow as tf
@@ -15,46 +16,80 @@ from   matplotlib.collections import PatchCollection
 from   matplotlib.patches import Rectangle
 import configuration as conf
 
-def tree_to_numpy(input_file, variables, weight, cut=None, reweight_to_cross_section=False):
-    file_handle = TFile.Open(input_file)
-    tree = file_handle.Get('evtreeHME')
-    cross_section = 1
+def get_xsection_eventweightsum_tree(tree):
+    #tree = ROOT.TChain( treename )
+    #tree.Add(filename)
+    n = tree.GetEntry()
+    i = 0
+    xsec = 0.0; event_weight_sum =0.0;
+    for i in range(0, 100):
+        tree.GetEntry(i)
+        cross_section = tree.cross_section
+        weisum = tree.event_weight_sum
+        if i == 0:
+            xsec = cross_section
+            event_weight_sum = weisum
+        else:
+            if abs(xsec-cross_section)>0.01*xsec or abs(event_weight_sum - weisum)> 0.01*event_weight_sum:
+                print "WARNING: cross_section or event_weight_sum may be not a single value, xsec  ", xsec," event_weight_sum ",event_weight_sum," this entry ",cross_section," ",weisum 
+    return xsec,event_weight_sum
+
+
+def tree_to_numpy(input_file, treename, variables, weight, cut=None, reweight_to_cross_section=False):
+    #file_handle = TFile.Open(input_file, "READ")
+    #tree = file_handle.Get(treename)
+    tree = TChain(treename)
+    tree.Add(input_file)
+    #cross_section = 1
     relative_weight = 1
     if reweight_to_cross_section:
-        h_xSec = TH1F("h_xSec","",10000,0.,10000); tree.Draw("cross_section>>h_xSec","","nog")
-        cross_section = h_xSec.GetMean()
-        if (h_xSec.GetRMS()/h_xSec.GetMean()>0.0001):
-          print "WARNING: cross_section has not a single value!!! RMS is", h_xSec.GetRMS()
-        h_weiSum = TH1F("h_weiSum","",1000000000,0.,1000000000); tree.Draw("event_weight_sum>>h_weiSum","","nog")
-        if (h_weiSum.GetRMS()/h_weiSum.GetMean()>0.0001):
-          print "WARNING: event_weight_sum has not a single value!!! RMS is", h_weiSum.GetRMS()
-        relative_weight = cross_section / h_weiSum.GetMean()
-    if isinstance(weight, dict): # Returns a Boolean stating whether the object is an instance or subclass of another object.
-        # Keys are regular expression and values are actual weights. Find the key matching the input filename
-        found, weight_expr = False, None
-        if '__base__' in weight:
-            weight_expr = weight['__base__']
-        for k, v in weight.items():
-            if k == '__base__':
-                continue
-            groups = re.search(k, input_file)
-            if not groups:
-                continue
-            else:
-                if found:
-                    raise Exception("The input file is matched by more than one weight regular expression. %r" % input_file)
-                found = True
-                weight_expr = join_expression(weight_expr, v)
-        if not weight_expr:
-            raise Exception("Not weight expression found for input file %r" % weight_expr)
-        weight = weight_expr
+        cross_section,event_weight_sum = get_xsection_eventweightsum_tree(tree)
+        #h_xSec = TH1F("h_xSec","",10000,0.,10000); tree.Draw("cross_section>>h_xSec","","nog")
+        #cross_section = h_xSec.GetMean()
+        #if (h_xSec.GetRMS()/h_xSec.GetMean()>0.0001):
+        #  print "WARNING: cross_section has not a single value!!! RMS is", h_xSec.GetRMS()
+        #h_weiSum = TH1F("h_weiSum","",1000000000,0.,1000000000); tree.Draw("event_weight_sum>>h_weiSum","","nog")
+        #if (h_weiSum.GetRMS()/h_weiSum.GetMean()>0.0001):
+        #  print "WARNING: event_weight_sum has not a single value!!! RMS is", h_weiSum.GetRMS()
+        #relative_weight = cross_section / h_weiSum.GetMean()
+        relative_weight = cross_section / event_weight_sum
+    #if isinstance(weight, dict): # Returns a Boolean stating whether the object is an instance or subclass of another object.
+    #    # Keys are regular expression and values are actual weights. Find the key matching the input filename
+    #    found, weight_expr = False, None
+    #    if '__base__' in weight:
+    #        weight_expr = weight['__base__']
+    #    for k, v in weight.items():
+    #        if k == '__base__':
+    #            continue
+    #        groups = re.search(k, input_file)
+    #        if not groups:
+    #            continue
+    #        else:
+    #            if found:
+    #                raise Exception("The input file is matched by more than one weight regular expression. %r" % input_file)
+    #            found = True
+    #            weight_expr = join_expression(weight_expr, v)
+    #    if not weight_expr:
+    #        raise Exception("Not weight expression found for input file %r" % weight_expr)
+    #    weight = weight_expr
     # Read the tree and convert it to a numpy structured array
     a = tree2array(tree, branches=variables + [weight], selection=cut)
     # Rename the last column to 'weight'
+    print "shape from tree2array ", a.shape," a ",a
     a.dtype.names = variables + ['weight']
-    dataset = a[variables]
+    #dataset =  a[variables]
+    data_list = [a[x] for x in variables]
+    dataset = np.concatenate(data_list, axis=1)
+    #dataset = np.c_[data_list]
+
     weights = a['weight'] * relative_weight
-    dataset = np.array(dataset.tolist(), dtype=np.float32)
+    #print "dataset.shape ",dataset.shape," weight.shape ",weights.shape," weights ",weights
+    ##dataset = np.array(dataset.tolist(), dtype=np.float32)
+    #dataset.flatten()
+    #dataset.reshape(tree.GetEntries(), len(variables))
+    #weights.reshape(tree.GetEntries(), 1)
+    #print " dataset.shape ",dataset.shape," weight.shape ",weights.shape," weights ",weights
+
     return dataset, weights
 
 def save_training_parameters(output, model, **kwargs):
@@ -149,7 +184,7 @@ def step_decay(epoch):
 
 # Record loss history and learning rate during the training procedure
 class LossHistory(keras.callbacks.Callback):
-    sess = tf.InteractiveSession()
+    #sess = tf.InteractiveSession()
     def on_train_begin(self, logs={}):
         self.losses = []
         self.lr = []

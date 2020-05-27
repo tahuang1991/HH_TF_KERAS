@@ -14,7 +14,8 @@ if not os.path.exists(data_folder):
     os.makedirs(data_folder)
 all_masses    = [260, 270, 300, 350, 400, 450, 500, 550, 600, 650, 800, 900]
 features      = conf.features_store
-resonant_weights = conf.resonant_weights
+#resonant_weights = conf.resonant_weights
+resonant_weights = "final_total_weight"
 
 # Loading Signal and Backgrounds
 for mass in all_masses:
