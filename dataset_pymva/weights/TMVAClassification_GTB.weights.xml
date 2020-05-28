@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<MethodSetup Method="PyGTB::GTB">
+  <GeneralInfo>
+    <Info name="TMVA Release" value="4.2.1 [262657]"/>
+    <Info name="ROOT Release" value="6.16/00 [397312]"/>
+    <Info name="Creator" value="taohuang"/>
+    <Info name="Date" value="Wed May 27 22:01:17 2020"/>
+    <Info name="Host" value="Darwin TaoHuangs-MacBook-Pro.local 18.5.0 Darwin Kernel Version 18.5.0: Mon Mar 11 20:40:32 PDT 2019; root:xnu-4903.251.3~3/RELEASE_X86_64 x86_64"/>
+    <Info name="Dir" value="/Users/taohuang/Documents/DiHiggs/HH_TF_KERAS_2020"/>
+    <Info name="Training events" value="1074720"/>
+    <Info name="TrainingTime" value="5.71477391e+02"/>
+    <Info name="AnalysisType" value="Classification"/>
+  </GeneralInfo>
+  <Options>
+    <Option name="V" modified="Yes">False</Option>
+    <Option name="VerbosityLevel" modified="No">Default</Option>
+    <Option name="VarTransform" modified="Yes">None</Option>
+    <Option name="H" modified="Yes">True</Option>
+    <Option name="CreateMVAPdfs" modified="No">False</Option>
+    <Option name="IgnoreNegWeightsInTraining" modified="No">False</Option>
+    <Option name="Normalise" modified="No">False</Option>
+    <Option name="D" modified="No">False</Option>
+    <Option name="VarTransformType" modified="No">Signal</Option>
+    <Option name="TxtWeightFilesOnly" modified="No">True</Option>
+    <Option name="NbinsMVAPdf" modified="No">60</Option>
+    <Option name="NsmoothMVAPdf" modified="No">2</Option>
+    <Option name="Loss" modified="No">deviance</Option>
+    <Option name="LearningRate" modified="Yes">1.000000e-01</Option>
+    <Option name="NEstimators" modified="Yes">100</Option>
+    <Option name="Subsample" modified="No">1.000000e+00</Option>
+    <Option name="MinSamplesSplit" modified="No">2</Option>
+    <Option name="MinSamplesLeaf" modified="No">1</Option>
+    <Option name="MinWeightFractionLeaf" modified="No">0.000000e+00</Option>
+    <Option name="MaxDepth" modified="Yes">3</Option>
+    <Option name="Init" modified="No">None</Option>
+    <Option name="RandomState" modified="No">None</Option>
+    <Option name="MaxFeatures" modified="No">None</Option>
+    <Option name="Verbose" modified="No">0</Option>
+    <Option name="MaxLeafNodes" modified="No">None</Option>
+    <Option name="WarmStart" modified="No">False</Option>
+    <Option name="FilenameClassifier" modified="No">dataset_pymva/weights/PyGTBModel_GTB.PyData</Option>
+  </Options>
+  <Variables NVar="12">
+    <Variable VarIndex="0" Expression="hme_h2mass_reco" Label="hme_h2mass_reco" Title="hme_h2mass_reco" Unit="" Internal="hme_h2mass_reco" Type="F" Min="-1.00000000e+00" Max="1.19950000e+03"/>
+    <Variable VarIndex="1" Expression="jj_M" Label="jj_M" Title="jj_M" Unit="" Internal="jj_M" Type="F" Min="1.07628918e+01" Max="3.31551514e+03"/>
+    <Variable VarIndex="2" Expression="jj_pt" Label="jj_pt" Title="jj_pt" Unit="" Internal="jj_pt" Type="F" Min="1.05302066e-01" Max="1.21138464e+03"/>
+    <Variable VarIndex="3" Expression="ll_pt" Label="ll_pt" Title="ll_pt" Unit="" Internal="ll_pt" Type="F" Min="6.78404570e-02" Max="7.50990112e+02"/>
+    <Variable VarIndex="4" Expression="ll_M" Label="ll_M" Title="ll_M" Unit="" Internal="ll_M" Type="F" Min="1.20000811e+01" Max="7.59999695e+01"/>
+    <Variable VarIndex="5" Expression="ll_DR_l_l" Label="ll_DR_l_l" Title="ll_DR_l_l" Unit="" Internal="ll_DR_l_l" Type="F" Min="4.27928418e-02" Max="4.41223240e+00"/>
+    <Variable VarIndex="6" Expression="jj_DR_j_j" Label="jj_DR_j_j" Title="jj_DR_j_j" Unit="" Internal="jj_DR_j_j" Type="F" Min="3.89269710e-01" Max="5.53556442e+00"/>
+    <Variable VarIndex="7" Expression="llmetjj_DPhi_ll_jj" Label="llmetjj_DPhi_ll_jj" Title="llmetjj_DPhi_ll_jj" Unit="" Internal="llmetjj_DPhi_ll_jj" Type="F" Min="2.38418579e-06" Max="3.14159250e+00"/>
+    <Variable VarIndex="8" Expression="llmetjj_minDR_l_j" Label="llmetjj_minDR_l_j" Title="llmetjj_minDR_l_j" Unit="" Internal="llmetjj_minDR_l_j" Type="F" Min="3.00090879e-01" Max="4.23229790e+00"/>
+    <Variable VarIndex="9" Expression="llmetjj_MTformula" Label="llmetjj_MTformula" Title="llmetjj_MTformula" Unit="" Internal="llmetjj_MTformula" Type="F" Min="0.00000000e+00" Max="1.11847681e+03"/>
+    <Variable VarIndex="10" Expression="isSF" Label="isSF" Title="isSF" Unit="" Internal="isSF" Type="F" Min="0.00000000e+00" Max="1.00000000e+00"/>
+    <Variable VarIndex="11" Expression="mt2" Label="mt2" Title="mt2" Unit="" Internal="mt2" Type="F" Min="2.32986355e+01" Max="1.08516370e+03"/>
+  </Variables>
+  <Spectators NSpec="0"/>
+  <Classes NClass="2">
+    <Class Name="Signal" Index="0"/>
+    <Class Name="Background" Index="1"/>
+  </Classes>
+  <Transformations NTransformations="0"/>
+  <MVAPdfs/>
+</MethodSetup>

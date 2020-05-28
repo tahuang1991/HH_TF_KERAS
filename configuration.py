@@ -31,12 +31,25 @@ useLDA           = True
 lr               = 0.0005
 regular          = tf.keras.regularizers.l2()
 training_epochs  = 50
-batch_size       = 1500
+batch_size       = 2000
 
 # Testing parameters
 numpy_folder     = 'numpy'
 signal_color     = '#468966'
 background_color = '#B64926'
 
+##other MVA methods
+MVAmethods = [ "kBDT","kDNN"]
+options = {
+        "kBDT" : "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5",
+        "kDNN" : "!H:V:ErrorStrategy=CROSSENTROPY:VarTransform=N:WeightInitialization=XAVIERUNIFORM:Architecture=CPU",
+        "kCuts" : "!H:Debug:FitMethod=MC:EffSel:SampleSize=20000:VarProp=FSmart",
+        "kMLP": "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:!UseRegulator",
+        "kLikelihood" : "H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50"
+        }
+
+
+
 # Comparison
 comp_folder_name = 'Comparison'
+
