@@ -93,19 +93,19 @@ modelfile = "hh_resonant_trained_models_kinematicwithMTandMT.h5"
 model.save(modelfile)
 
 
-## Keras interface with previously defined model
-#factory.BookMethod(dataloader, ROOT.TMVA.Types.kPyKeras, 'PyKeras',
-#        'H:!V:VarTransform=G:FilenameModel=%s:'%(modelfile)+\
-#        'NumEpochs=%d:BatchSize=%d:'%(conf.training_epochs, conf.batch_size)+\
-#        'TriesEarlyStopping=3')
-#
-#
-## Gradient tree boosting from scikit-learn package
-#factory.BookMethod(dataloader, ROOT.TMVA.Types.kPyGTB, 'GTB',
-#        'H:!V:VarTransform=None:'+\
-#        'NEstimators=100:LearningRate=0.1:MaxDepth=3')
-#
-# add other MVA method
+# Keras interface with previously defined model
+factory.BookMethod(dataloader, ROOT.TMVA.Types.kPyKeras, 'PyKeras',
+        'H:!V:VarTransform=G:FilenameModel=%s:'%(modelfile)+\
+        'NumEpochs=%d:BatchSize=%d:'%(conf.training_epochs, conf.batch_size)+\
+        'TriesEarlyStopping=3')
+
+
+# Gradient tree boosting from scikit-learn package
+factory.BookMethod(dataloader, ROOT.TMVA.Types.kPyGTB, 'GTB',
+        'H:!V:VarTransform=None:'+\
+        'NEstimators=100:LearningRate=0.1:MaxDepth=3')
+
+ add other MVA method
 
 for method in conf.MVAmethods:
     factory.BookMethod(dataloader, getattr(ROOT.TMVA.Types, method), method, conf.options[method])
