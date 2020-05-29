@@ -34,6 +34,10 @@ def get_xsection_eventweightsum_tree(tree):
                 print "WARNING: cross_section or event_weight_sum may be not a single value, xsec  ", xsec," event_weight_sum ",event_weight_sum," this entry ",cross_section," ",weisum 
     return xsec,event_weight_sum
 
+def get_xsection_eventweightsum_file(f, treename):
+    tree = ROOT.TChain( treename )
+    tree.Add(filename)
+    return get_xsection_eventweightsum_tree(tree)
 
 def tree_to_numpy(input_file, treename, variables, weight, cut=None, reweight_to_cross_section=False):
     #file_handle = TFile.Open(input_file, "READ")

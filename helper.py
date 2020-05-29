@@ -1,3 +1,4 @@
+import ROOT
 
 _rootBranchType2PythonArray = { 'b':'B', 'B':'b', 'i':'I', 'I':'i', 'F':'f', 'D':'d', 'l':'L', 'L':'l', 'O':'B' }
 
@@ -19,6 +20,10 @@ def get_xsection_eventweightsum_tree(tree):
                 print "WARNING: cross_section or event_weight_sum may be not a single value, xsec  ", xsec," event_weight_sum ",event_weight_sum," this entry ",cross_section," ",weisum 
     return xsec,event_weight_sum
 
+def get_xsection_eventweightsum_file(filename, treename):
+    tree = ROOT.TChain( treename )
+    tree.Add(filename)
+    return get_xsection_eventweightsum_tree(tree)
 
 def add_parametric_variable_tree(tree, branchname, column):
 

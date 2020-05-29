@@ -101,11 +101,11 @@ factory.BookMethod(dataloader, ROOT.TMVA.Types.kPyKeras, 'PyKeras',
 
 
 # Gradient tree boosting from scikit-learn package
-factory.BookMethod(dataloader, ROOT.TMVA.Types.kPyGTB, 'GTB',
-        'H:!V:VarTransform=None:'+\
-        'NEstimators=100:LearningRate=0.1:MaxDepth=3')
-
- add other MVA method
+#factory.BookMethod(dataloader, ROOT.TMVA.Types.kPyGTB, 'GTB',
+#        'H:!V:VarTransform=None:'+\
+#        'NEstimators=100:LearningRate=0.1:MaxDepth=3')
+#
+# add other MVA method
 
 for method in conf.MVAmethods:
     factory.BookMethod(dataloader, getattr(ROOT.TMVA.Types, method), method, conf.options[method])

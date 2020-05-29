@@ -2,9 +2,10 @@ import ROOT
 import numpy as np
 import pickle
 import math
-import gzip
 import datetime
+import json
 from timeit import default_timer as timer
+import gzip
 
 
 # Select Theano as backend for Keras
@@ -18,16 +19,24 @@ os.environ['KERAS_BACKEND'] = 'theano'
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout
 from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle, safe_indexing
+
 
 
 import configuration as conf
 import plotTools
+from helper import *
 
 
+epochs = 100
+batch_size = 5000
+dataLumi = 35.86
 
 treename = "t"
 sfile_dict = {}
-for m in []:
+for m in [260, 270, 300, 350, 400, 450, 500, 550, 600, 650, 750, 800, 900]:
     sfile_dict["RadiaonM%d"%m] = {}
     sfile_dict["RadiaonM%d"%m]['path'] = "/Users/taohuang/Documents/DiHiggs/20180205_20180202_10k_Louvain_ALLNoSys/radion_M%d_all.root"%m
     sfile_dict["RadiaonM%d"%m]['weight'] = "total_weight"
@@ -76,7 +85,8 @@ def create_resonant_model(n_inputs):
         model.add(Dense(100, kernel_initializer="glorot_uniform", activation="relu"))
     model.add(Dropout(0.2))
     model.add(Dense(2, kernel_initializer="glorot_uniform", activation="softmax"))
-    optimizer = Adam(lr=0.0001)
+    #optimizer = Adam(lr=0.0001)
+    optimizer = Adam(lr=0.0005)
     # You compile it so you can actually use it
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     model.summary()
@@ -102,36 +112,43 @@ class DatasetManager:
        ## only for parametric DNN 
         self.resonant_mass_probabilities = None
         self.parametricDNN = False
-
-
-    def loadResonantSignal(self, treename, masses=resonant_signal_masses):
-        print("loading Resonant Signals, input variables ", variables," \n mass points ", masses)
-        #variables.append('final_total_weight')
-        p = [[], []]
-
-        datasets = []
-        weights = []
-        self.resonant_signal_masses = masses
-
         if len(masses) > 1:     self.parametricDNN = True
 
-        for mass in masses:
+        print("build dataloader object, with signal mass ", masses, " selections ",selection, " input variables ", variables)
+        print("\n")
+
+
+    def loadResonantSignal(self, treename):
+        masses = self.resonant_masses
+        print("loading Resonant Signals.....")
+        p = [[], []]
+        datasets = []
+        weights = []
+
+
+        for m in masses:
             signal_filename = sfile_dict["RadiaonM%d"%m]['path']
             weightexpr = sfile_dict["RadiaonM%d"%m]['weight']
             df_sig = ROOT.RDataFrame(treename, signal_filename)
             ## convert df_sig into dict
-            data_sig = df_sig.Filter(self.selection).Define('final_total_weight', weightexpr).AsNumpy() 
+            ## isSF is boolean and should be treated differently 
+            data_sig = df_sig.Filter(self.selection).Define('final_total_weight', weightexpr).Define('isSF_float','(1.0*isSF)').AsNumpy() 
+            #print("isSF ", data_sig['isSF'],' isSF_float ',data_sig['isSF_float'])
+            self.variables = map(lambda x : x if x != 'isSF' else 'isSF_float', self.variables)
+            #for i in range(50):
+            #    print("jj_M: ", data_sig['jj_M'][i], " isSF ",data_sig['isSF'][i],' isSF_float  ', data_sig['isSF_float'][i]  )
+            
             ## convert into ndarray
-            x_sig = np.vstack([data_sig[var] for var in variables]).T
+            x_sig = np.vstack([data_sig[var] for var in self.variables]).T
             w_sig = data_sig['final_total_weight']
             #x_sig = np.array(x_sig.tolist(), dtype=np.float32)
 
             p[0].append(m)
-            p[1].append(len(dataset))
+            p[1].append(len(x_sig))
 
             if self.parametricDNN:
-                mass_col = np.empty(len(dataset)) 
-                mass_col.fill(mass)
+                mass_col = np.empty(len(x_sig)) 
+                mass_col.fill(m)
                 x_sig = np.c_[x_sig, mass_col]
 
             datasets.append(x_sig)
@@ -147,22 +164,24 @@ class DatasetManager:
         self.resonant_parameters_probabilities = p
 
         print("Done. Number of signal events: %d ; Sum of weights: %.4f" % (len(self.signal_dataset), np.sum(self.signal_weights)))
+        print("\n")
         #return datasets,weights
 
-    def loadBackground(self, treename):
-        print("loading backgrounds, input variables ", variables)
+    def loadBackgrounds(self, treename):
+        print("loading backgrounds.....")
         datasets = []
         weights = []
 
         for bg in bfile_dict.keys():
+        #for bg in ['sTop']:
             bg_filename = bfile_dict[bg]['path']
             weightexpr = bfile_dict[bg]['weight']
-            xsec,event_weight_sum = get_xsection_eventweightsum_file(bg_filename)
-            relative_weight = xsec/event_weight_sum
+            xsec,event_weight_sum = get_xsection_eventweightsum_file(bg_filename, treename)
+            relative_weight = dataLumi*1000*xsec/event_weight_sum
             df_bg = ROOT.RDataFrame(treename, bg_filename)
-            data_bg = df_bg.Filter(self.selection).Define('final_total_weight', weightexpr+"*%f"%(relative_weight)).AsNumpy()
-            x_bg = np.vstack([data_bg[var] for var in variables]).T
-            #x_bg = np.array(x_bg.tolist(), dtype=np.float32)
+            data_bg = df_bg.Filter(self.selection).Define('final_total_weight', weightexpr+"*%f"%(relative_weight)).Define('isSF_float','(1.0*isSF)').AsNumpy()
+            x_bg = np.vstack([data_bg[var] for var in self.variables]).T
+            x_bg = np.array(x_bg.tolist(), dtype=np.float32)
             w_bg = data_bg['final_total_weight']
 
             ### add mass column for bg, paramtric DNN
@@ -170,17 +189,19 @@ class DatasetManager:
                 probabilities = self.resonant_mass_probabilities
                 rs = np.random.RandomState(42)
 
-                indices = rs.choice(len(probabilities[0]), len(dataset), p=probabilities[1])
+                indices = rs.choice(len(probabilities[0]), len(x_bg), p=probabilities[1])
                 cols = np.array(np.take(probabilities[0], indices, axis=0), dtype='float')
-                dataset = np.c_[dataset, cols]
+                x_bg = np.c_[x_bg, cols]
 
+            print("loading background ",bg, " number of events: %d ;  final yield: %4.f" % (len(x_bg), np.sum(w_bg)))
             datasets.append(x_bg)
             weights.append(w_bg)
 
         self.background_dataset = np.concatenate(datasets)
         self.background_weights = np.concatenate(weights)
 
-        print("Done. Number of background events: %d ; Sum of weights: %.4f ; final yield: %.1f " % (len(self.background_dataset), np.sum(self.background_weights), dataLumi*1000* np.sum(self.background_weights)))
+        print("Done. Number of background events: %d ; final yield: %.4f " % (len(self.background_dataset), np.sum(self.background_weights)))
+        print("\n")
 
         #return datasets, weights
 
@@ -282,11 +303,11 @@ class DatasetManager:
         print("Plotting input variables...")
         variables = self.variables[:]
 
-        if self.n_extra_columns > 0:
+        if self.parametricDNN :
             if self.resonant_masses:
                 variables += ['mass_hypothesis']
-            elif self.nonresonant_parameters_list:
-                variables += ['k_l', 'k_t']
+            #elif self.nonresonant_parameters_list:
+            #    variables += ['k_l', 'k_t']
 
         for index, variable in enumerate(variables):
             output_file = os.path.join(output_dir, variable + ".pdf") 
@@ -465,25 +486,15 @@ def lr_scheduler(epoch):
     lr = default_lr * math.pow(drop, min(1, math.floor((1 + epoch) / epochs_drop)))
     return lr
 
-def training_resonant(model, variables, selection, masses , output_model_filename)
+def training_resonant( variables, selection, masses , output_folder, output_model_filename):
     parametricDNN = False
     if len(masses)>1:    parametricDNN = True
-
-
-    epochs = 100
-    batch_size = 5000
-    suffix = str(epochs)+"epochs"
-    output_suffix = '{:%Y-%m-%d}_{}'.format(datetime.date.today(), suffix)
-    output_folder = os.path.join('hh_resonant_trained_models_kinematicwithMTandMT2MjjHME_20180206', output_suffix)
-
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
 
 # Loading Signal and Backgrounds
     dataset = DatasetManager(variables, selection, masses)
 
-    dataset.load_resonant_signal(treename, masses=masses )
-    dataset.load_backgrounds(treename)
+    dataset.loadResonantSignal(treename)
+    dataset.loadBackgrounds(treename)
     dataset.split()
 
     training_dataset, training_targets = dataset.get_training_combined_dataset_and_targets()
@@ -494,7 +505,7 @@ def training_resonant(model, variables, selection, masses , output_model_filenam
 
 
     n_inputs = len(variables)
-    if add_mass_column:
+    if len(masses)>1: ## add mass column
         n_inputs += 1
 
     # You create here the real DNN structure
@@ -502,10 +513,10 @@ def training_resonant(model, variables, selection, masses , output_model_filenam
 
 # callback: set of functions to be applied at given stages of the training procedure. You can use callbacks to get a view on internal states/statistics of model during training
     callbacks = []
-    callbacks.append(keras.callbacks.ModelCheckpoint(output_model_filename, monitor='val_loss', verbose=False, save_best_only=True, mode='auto')) #Save model after every epoch
+    callbacks.append(ModelCheckpoint(output_model_filename, monitor='val_loss', verbose=False, save_best_only=True, mode='auto')) #Save model after every epoch
 # output_logs_folder = os.path.join('hh_resonant_trained_models', 'logs', output_suffix)
 # callbacks.append(keras.callbacks.TensorBoard(log_dir=output_logs_folder, histogram_freq=1, write_graph=True, write_images=False))
-    callbacks.append(keras.callbacks.LearningRateScheduler(lr_scheduler)) # Provide learnign rate per epoch. lr_scheduler = have to be a function of epoch.
+    callbacks.append(LearningRateScheduler(lr_scheduler)) # Provide learnign rate per epoch. lr_scheduler = have to be a function of epoch.
     #n_inputs = len(inputs)
     #if add_mass_column:
     #    n_inputs += 1
@@ -525,11 +536,10 @@ def training_resonant(model, variables, selection, masses , output_model_filenam
     save_training_parameters(output_folder, model,
             batch_size=batch_size, epochs=epochs,
             training_time=str(training_time),
-            masses=signal_masses,
-            with_mass_column=add_mass_column,
-            inputs=inputs,
-            cut=cut,
-            weights=resonant_weights)
+            masses=masses,
+            with_mass_column=parametricDNN,
+            inputs=variables,
+            cut=selection)
 
     plotTools.draw_keras_history(history, output_dir=output_folder, output_name="loss.pdf")
 
@@ -666,20 +676,36 @@ if __name__ == "__main__":
 ### kinematics + MT+MT2+MJJ+HME
 
 #features_store   = ['jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','hme_h2mass_reco','isSF', "mt2"]
-    features_store   = ['jj_M', 'jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','isSF', "mt2"] ##noHME
-    features_store   = ['hme_h2mass_reco','jj_M', 'jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','isSF', 'mt2'] ##with HME
+    features_store   = ['jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','isSF', "mt2"] ##noHME
+    features_store   = ['jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','isSF', 'mt2','hme_h2mass_reco','jj_M'] ##with HME
+    features_store   = ['isSF', 'jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula', 'mt2','hme_h2mass_reco','jj_M'] ##with HME
+    cut = "91-ll_M>15 && hme_h2mass_reco>=250"
     mass_list = [400]
+    parametricDNN = (len(mass_list) != 1)
+
+    variablename = "MTandMT2MjjHME"
+    suffix = str(epochs)+"epochs"
+    output_suffix = '{}_{:%Y-%m-%d}_{}'.format(variablename, datetime.date.today(), suffix)
+    if parametricDNN:
+        output_suffix = output_suffix+"_paramtricDNN"
+    else:
+        output_suffix = output_suffix+"_dedicatedDNN%d"%mass_list[0]
+
+    output_folder = os.path.join('DNNmodels', output_suffix)
+
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     output_model_filename = 'hh_resonant_trained_model.h5'
     output_model_filename = os.path.join(output_folder, output_model_filename)
+
     n_inputs = len(features_store)
-    parametricDNN = False
-    model, dataset = training_resonant(features_store, cut, mass_list , output_model_filename)
+    dataset, model = training_resonant(features_store, cut, mass_list , output_folder, output_model_filename)
 
 
     export_for_lwtnn(model, output_model_filename)
 # Draw the inputs 
-    draw_resonant_training_plots(model, dataset, output_folder, split_by_mass=add_mass_column)
+    draw_resonant_training_plots(model, dataset, output_folder, split_by_mass=parametricDNN)
     ###
     #model = keras.models.load_model(output_model_filename)
 
