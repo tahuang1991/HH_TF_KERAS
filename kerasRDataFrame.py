@@ -30,8 +30,8 @@ import plotTools
 from helper import *
 
 
-epochs = 100
-batch_size = 5000
+epochs = 50
+batch_size = 1000
 dataLumi = 35.86
 
 treename = "t"
@@ -161,7 +161,7 @@ class DatasetManager:
 
         self.signal_dataset = np.concatenate(datasets)
         self.signal_weights = np.concatenate(weights)
-        self.resonant_parameters_probabilities = p
+        self.resonant_mass_probabilities = p
 
         print("Done. Number of signal events: %d ; Sum of weights: %.4f" % (len(self.signal_dataset), np.sum(self.signal_weights)))
         print("\n")
@@ -192,6 +192,8 @@ class DatasetManager:
                 indices = rs.choice(len(probabilities[0]), len(x_bg), p=probabilities[1])
                 cols = np.array(np.take(probabilities[0], indices, axis=0), dtype='float')
                 x_bg = np.c_[x_bg, cols]
+            elif self.parametricDNN:
+                print("Warning!!! it is a parametric DNN training but no extra column is added")
 
             print("loading background ",bg, " number of events: %d ;  final yield: %4.f" % (len(x_bg), np.sum(w_bg)))
             datasets.append(x_bg)
@@ -681,6 +683,7 @@ if __name__ == "__main__":
     features_store   = ['isSF', 'jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula', 'mt2','hme_h2mass_reco','jj_M'] ##with HME
     cut = "91-ll_M>15 && hme_h2mass_reco>=250"
     mass_list = [400]
+    mass_list = [400, 450, 500, 550, 600, 650]
     parametricDNN = (len(mass_list) != 1)
 
     variablename = "MTandMT2MjjHME"
