@@ -22,3 +22,11 @@
 # TODO LIST
 . Use autoencoding
 . Jumping frog, i.e. from model get weights and biases, compute distsane from 0,0,0, and then reinitialize at the same distance from 0,0,0.
+
+
+##New framework since 2020
+
+. python kerasRDataFrame.py to do training and ploting 
+. python addNNToTree.py to add prediction to the tree
+
+DNNModelLUT.py is a dictionary for DNN models and inputs
