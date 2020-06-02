@@ -1,0 +1,230 @@
+{
+    "model": {
+        "class_name": "Sequential", 
+        "keras_version": "2.0.3", 
+        "config": [
+            {
+                "class_name": "Dense", 
+                "config": {
+                    "kernel_initializer": {
+                        "class_name": "VarianceScaling", 
+                        "config": {
+                            "distribution": "uniform", 
+                            "scale": 1.0, 
+                            "seed": null, 
+                            "mode": "fan_avg"
+                        }
+                    }, 
+                    "name": "dense_1", 
+                    "kernel_constraint": null, 
+                    "bias_regularizer": null, 
+                    "bias_constraint": null, 
+                    "dtype": "float32", 
+                    "activation": "relu", 
+                    "trainable": true, 
+                    "kernel_regularizer": null, 
+                    "bias_initializer": {
+                        "class_name": "Zeros", 
+                        "config": {}
+                    }, 
+                    "units": 100, 
+                    "batch_input_shape": [
+                        null, 
+                        13
+                    ], 
+                    "use_bias": true, 
+                    "activity_regularizer": null
+                }
+            }, 
+            {
+                "class_name": "Dense", 
+                "config": {
+                    "kernel_initializer": {
+                        "class_name": "VarianceScaling", 
+                        "config": {
+                            "distribution": "uniform", 
+                            "scale": 1.0, 
+                            "seed": null, 
+                            "mode": "fan_avg"
+                        }
+                    }, 
+                    "name": "dense_2", 
+                    "kernel_constraint": null, 
+                    "bias_regularizer": null, 
+                    "bias_constraint": null, 
+                    "activation": "relu", 
+                    "trainable": true, 
+                    "kernel_regularizer": null, 
+                    "bias_initializer": {
+                        "class_name": "Zeros", 
+                        "config": {}
+                    }, 
+                    "units": 100, 
+                    "use_bias": true, 
+                    "activity_regularizer": null
+                }
+            }, 
+            {
+                "class_name": "Dense", 
+                "config": {
+                    "kernel_initializer": {
+                        "class_name": "VarianceScaling", 
+                        "config": {
+                            "distribution": "uniform", 
+                            "scale": 1.0, 
+                            "seed": null, 
+                            "mode": "fan_avg"
+                        }
+                    }, 
+                    "name": "dense_3", 
+                    "kernel_constraint": null, 
+                    "bias_regularizer": null, 
+                    "bias_constraint": null, 
+                    "activation": "relu", 
+                    "trainable": true, 
+                    "kernel_regularizer": null, 
+                    "bias_initializer": {
+                        "class_name": "Zeros", 
+                        "config": {}
+                    }, 
+                    "units": 100, 
+                    "use_bias": true, 
+                    "activity_regularizer": null
+                }
+            }, 
+            {
+                "class_name": "Dense", 
+                "config": {
+                    "kernel_initializer": {
+                        "class_name": "VarianceScaling", 
+                        "config": {
+                            "distribution": "uniform", 
+                            "scale": 1.0, 
+                            "seed": null, 
+                            "mode": "fan_avg"
+                        }
+                    }, 
+                    "name": "dense_4", 
+                    "kernel_constraint": null, 
+                    "bias_regularizer": null, 
+                    "bias_constraint": null, 
+                    "activation": "relu", 
+                    "trainable": true, 
+                    "kernel_regularizer": null, 
+                    "bias_initializer": {
+                        "class_name": "Zeros", 
+                        "config": {}
+                    }, 
+                    "units": 100, 
+                    "use_bias": true, 
+                    "activity_regularizer": null
+                }
+            }, 
+            {
+                "class_name": "Dense", 
+                "config": {
+                    "kernel_initializer": {
+                        "class_name": "VarianceScaling", 
+                        "config": {
+                            "distribution": "uniform", 
+                            "scale": 1.0, 
+                            "seed": null, 
+                            "mode": "fan_avg"
+                        }
+                    }, 
+                    "name": "dense_5", 
+                    "kernel_constraint": null, 
+                    "bias_regularizer": null, 
+                    "bias_constraint": null, 
+                    "activation": "relu", 
+                    "trainable": true, 
+                    "kernel_regularizer": null, 
+                    "bias_initializer": {
+                        "class_name": "Zeros", 
+                        "config": {}
+                    }, 
+                    "units": 100, 
+                    "use_bias": true, 
+                    "activity_regularizer": null
+                }
+            }, 
+            {
+                "class_name": "Dropout", 
+                "config": {
+                    "rate": 0.2, 
+                    "trainable": true, 
+                    "name": "dropout_1"
+                }
+            }, 
+            {
+                "class_name": "Dense", 
+                "config": {
+                    "kernel_initializer": {
+                        "class_name": "VarianceScaling", 
+                        "config": {
+                            "distribution": "uniform", 
+                            "scale": 1.0, 
+                            "seed": null, 
+                            "mode": "fan_avg"
+                        }
+                    }, 
+                    "name": "dense_6", 
+                    "kernel_constraint": null, 
+                    "bias_regularizer": null, 
+                    "bias_constraint": null, 
+                    "activation": "softmax", 
+                    "trainable": true, 
+                    "kernel_regularizer": null, 
+                    "bias_initializer": {
+                        "class_name": "Zeros", 
+                        "config": {}
+                    }, 
+                    "units": 2, 
+                    "use_bias": true, 
+                    "activity_regularizer": null
+                }
+            }
+        ], 
+        "backend": "theano"
+    }, 
+    "extra": {
+        "inputs": [
+            "jj_pt", 
+            "ll_pt", 
+            "ll_M", 
+            "ll_DR_l_l", 
+            "jj_DR_j_j", 
+            "llmetjj_DPhi_ll_jj", 
+            "llmetjj_minDR_l_j", 
+            "llmetjj_MTformula", 
+            "mt2", 
+            "isSF", 
+            "jj_M", 
+            "hme_h2mass_reco"
+        ], 
+        "cut": "(91 - ll_M) > 15&& hme_h2mass_reco>=250", 
+        "masses": [
+            260, 
+            270, 
+            300, 
+            350, 
+            400, 
+            450, 
+            500, 
+            550, 
+            600, 
+            650, 
+            750, 
+            800, 
+            900
+        ], 
+        "batch_size": 5000, 
+        "epochs": 100, 
+        "training_time": "0:48:55.598571", 
+        "weights": {
+            "__base__": "event_weight * trigeff * jjbtag_heavy * jjbtag_light * llidiso * pu", 
+            "DY.*": "dy_nobtag_to_btagM_weight"
+        }, 
+        "with_mass_column": true
+    }
+}
