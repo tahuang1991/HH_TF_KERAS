@@ -515,16 +515,21 @@ def makeNtuple_prediction_folder(masses, input_folder, output_folder):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     allfiles = os.listdir(input_folder)
-    for f in allfiles:
-        if f.endwith('.root'):
-            filename  = f.split('/')[-1]
+    i = len(allfiles)-1
+    #for f in allfiles:
+    while i>= 0:
+        f = allfiles[i]
+        if f.endswith('.root'):
+            filename  = f
+            infile  = os.path.join(input_folder, f)
             output_file = os.path.join(output_folder, filename[:-5]+"_2020DNN.root")
             print "file ",f," output ", output_file 
             treename = "evtreeHME_nn"
             #if "Radion" in samplename: treename = "Friends"
             ## for dedicated DNN, only a certain signal is consider
-            writeNNToTree(treename, f, cut, modellist, DNNModelLUT.ModelLUT,  masses, output_file)
+            writeNNToTree(treename, infile, cut, modellist, DNNModelLUT.ModelLUT,  masses, output_file)
         #sys.exit(0)
+        #i -= 1
             
 
 
@@ -533,8 +538,9 @@ def makeNtuple_prediction_folder(masses, input_folder, output_folder):
 #output_file = "test_M400_MTandMT2_HMEMJJ.root"
 #filepath = "/Users/taohuang/Documents/DiHiggs/20180205_20180202_10k_Louvain_ALLNoSys/radion_M400_all.root"
 
+#makeNtuple_prediction_folder([400, 750], "/Users/taohuang/Documents/DiHiggs/20180316_NanoAOD/20180618_TT_DYdatadriven_addNN20180621/", "20200604_adddedicatedNN_untaggedTT_part2/")
 #makeNtuple_prediction([260, 270, 300, 350, 400, 450, 500, 550, 600, 650, 750, 800, 900])
 #makeNtuple_prediction([400, 750])
-#for model in modellist:
-#    plotmodel(SampleTypeLUT.ModelLUT, model, model+"_visualization.pdf")
+for model in modellist:
+    plotmodel(DNNModelLUT.ModelLUT, model, model+"_visualization.pdf")
 
