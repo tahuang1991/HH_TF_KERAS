@@ -75,8 +75,10 @@ datapath = "/Users/taohuang/Documents/DiHiggs/20180316_NanoAOD/"
 localdir = datapath+"HHNtuple_20180518_addSys/"
 localdir = datapath+"20180619_HHbbWW_addHME_addSys_10k/"
 localdir = datapath+"20180619_HHbbWW_addHME_addSys_10k_addNN/"
+localdir = "/Users/taohuang/Documents/DiHiggs/HH_TF_KERAS_2020/20200604_adddedicatedNN/"
 addHME = True
 addNN = True
+dedicatedNN = True
 for i,isample in enumerate(Slist.NumSample):
     
     if int(isample) <0:
@@ -93,6 +95,8 @@ for i,isample in enumerate(Slist.NumSample):
         localfilepath = os.path.join(localdir, dataname+"_HME_Friends.root")
     if int(isample) < 13:
         localfilepath = os.path.join(datapath+"20180703_HHbbWW_addHME_addSys_10k_Signalonly/2018-07-05/", dataname+"_HME_Friends_NN.root")
+    if dedicatedNN:
+        localfilepath = os.path.join(localdir, dataname+"_2020DNN.root")
     xsec =  Slist.MCxsections[i]
     if sampleName not in full_local_samplelist.keys():
         full_local_samplelist[sampleName] = {}
@@ -128,6 +132,8 @@ for dataname in datanames:
         full_local_samplelist["Data"][dataname]["path"] =  os.path.join(localdatadir,dataname+"_HME_Friends_NN.root")
     if addHME and not(addNN):
         full_local_samplelist["Data"][dataname]["path"] =  os.path.join(localdatadir,dataname+"_HME_Friends.root")
+    if dedicatedNN:
+        full_local_samplelist["Data"][dataname]["path"] =  os.path.join(localdatadir,dataname+"_2020DNN.root")
 
 
     if not os.path.isfile(full_local_samplelist["Data"][dataname]["path"]):
@@ -151,6 +157,9 @@ for mcname in untagged_MCname:
             full_local_samplelist[mcname + untagged_suffix][key + untagged_suffix]['path'] = os.path.join(untagged_localdir, key+"_HME_addMbtagWeight_NN.root")
         if addHME and not(addNN):
             full_local_samplelist[mcname + untagged_suffix][key + untagged_suffix]['path'] = os.path.join(untagged_localdir, key+"_HME_addMbtagWeight.root")
+        if dedicatedNN:
+            full_local_samplelist[mcname + untagged_suffix][key + untagged_suffix]['path'] = os.path.join(untagged_localdir, key+"_2020DNN.root")
+
         full_local_samplelist[mcname + untagged_suffix][key + untagged_suffix]['cross_section'] = full_local_samplelist[ mcname][key]['cross_section']
     if not os.path.isfile(full_local_samplelist[mcname + untagged_suffix][dataname]["path"]):
         print "error!! failed to find this file ", full_local_samplelist[mcname + untagged_suffix][dataname]["path"]
@@ -169,6 +178,9 @@ for dataname in datas:
         full_local_samplelist["Data" + untagged_suffix][dataname]["path"] =  os.path.join(untagged_localdatadir,dataname+"Run2016_HME_addMbtagWeight_NN.root")
     if addHME and not(addNN):
         full_local_samplelist["Data" + untagged_suffix][dataname]["path"] =  os.path.join(untagged_localdatadir,dataname+"Run2016_HME_addMbtagWeight.root")
+    if dedicatedNN:
+        full_local_samplelist["Data" + untagged_suffix][dataname]["path"] =  os.path.join(untagged_localdatadir,dataname+"_untagged_2020DNN.root")
+
     if not os.path.isfile(full_local_samplelist["Data" + untagged_suffix][dataname]["path"]):
         print "error!! failed to find this file ", full_local_samplelist["Data" + untagged_suffix][dataname]["path"]
 #print "full_local_samplelist ",full_local_samplelist

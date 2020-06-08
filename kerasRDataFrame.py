@@ -16,7 +16,7 @@ os.environ['KERAS_BACKEND'] = 'theano'
 # Set architecture of system (AVX instruction set is not supported on SWAN)
 #environ['THEANO_FLAGS'] = 'gcc.cxxflags=-march=corei7'
 
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers.core import Dense, Dropout
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
@@ -31,7 +31,7 @@ from helper import *
 
 
 epochs = 50
-batch_size = 1000
+batch_size = 2000
 dataLumi = 35.86
 
 treename = "t"
@@ -138,6 +138,8 @@ class DatasetManager:
             #for i in range(50):
             #    print("jj_M: ", data_sig['jj_M'][i], " isSF ",data_sig['isSF'][i],' isSF_float  ', data_sig['isSF_float'][i]  )
             
+            #for name in data_sig.keys():
+            #    print " ",name
             ## convert into ndarray
             x_sig = np.vstack([data_sig[var] for var in self.variables]).T
             w_sig = data_sig['final_total_weight']
@@ -163,6 +165,7 @@ class DatasetManager:
         self.signal_weights = np.concatenate(weights)
         self.resonant_mass_probabilities = p
 
+        print("first 10 events ", self.signal_dataset[:10])
         print("Done. Number of signal events: %d ; Sum of weights: %.4f" % (len(self.signal_dataset), np.sum(self.signal_weights)))
         print("\n")
         #return datasets,weights
@@ -173,7 +176,7 @@ class DatasetManager:
         weights = []
 
         for bg in bfile_dict.keys():
-        #for bg in ['sTop']:
+        #for bg in ['TT']:
             bg_filename = bfile_dict[bg]['path']
             weightexpr = bfile_dict[bg]['weight']
             xsec,event_weight_sum = get_xsection_eventweightsum_file(bg_filename, treename)
@@ -201,6 +204,8 @@ class DatasetManager:
 
         self.background_dataset = np.concatenate(datasets)
         self.background_weights = np.concatenate(weights)
+
+        print("first 10 events ", self.background_dataset[:10])
 
         print("Done. Number of background events: %d ; final yield: %.4f " % (len(self.background_dataset), np.sum(self.background_weights)))
         print("\n")
@@ -232,7 +237,7 @@ class DatasetManager:
             ratio = sumw_train_signal / sumw_train_background
             self.train_background_weights *= ratio
             self.test_background_weights *= ratio
-            print("Background training sample reweighted so that sum of event weights for signal and background match. Sum of event weight = %.4f" % (np.sum(self.train_signal_weights)))
+            print("Background training sample reweighted so that sum of event weights for signal and background match. Sum of event weight = %.4f for signal , %.4f for background " % (np.sum(self.train_signal_weights), np.sum(self.train_background_weights)))
 
         # Create merged training and testing dataset, with targets
         self.training_dataset = np.concatenate([self.train_signal_dataset, self.train_background_dataset])
@@ -297,7 +302,8 @@ class DatasetManager:
         ignore_n_last_columns = kwargs.get('ignore_last_columns', 0)
         if ignore_n_last_columns > 0:
             values = values[:, :-ignore_n_last_columns]
-        predictions = model.predict(values, batch_size=5000, verbose=1)
+        predictions = model.predict(values, batch_size=batch_size, verbose=1)
+        print("predictions ", predictions[:50])
         return np.delete(predictions, 1, axis=1).flatten()
 
     def draw_inputs(self, output_dir):
@@ -557,6 +563,30 @@ def training_resonant( variables, selection, masses , output_folder, output_mode
 
     return dataset, model
 
+def loadModelandData( variables, selection, masses , modelfile):
+    parametricDNN = False
+    if len(masses)>1:    parametricDNN = True
+
+# Loading Signal and Backgrounds
+    dataset = DatasetManager(variables, selection, masses)
+
+    dataset.loadResonantSignal(treename)
+    dataset.loadBackgrounds(treename)
+    dataset.split()
+
+    training_dataset, training_targets = dataset.get_training_combined_dataset_and_targets()
+    training_weights = dataset.get_training_combined_weights()
+
+    testing_dataset, testing_targets = dataset.get_testing_combined_dataset_and_targets()
+    testing_weights = dataset.get_testing_combined_weights()
+
+
+    n_inputs = len(variables)
+    if len(masses)>1: ## add mass column
+        n_inputs += 1
+
+    model = load_model(modelfile)
+    return dataset, model
      
 
 ####################################3
@@ -587,6 +617,8 @@ def draw_resonant_training_plots(model, dataset, output_folder, split_by_mass=Fa
     #step2 evaludation, get the predictions
     training_signal_predictions, testing_signal_predictions = dataset.get_training_testing_signal_predictions(model)
     training_background_predictions, testing_background_predictions = dataset.get_training_testing_background_predictions(model)
+    print("training_signal_predictions ", training_signal_predictions[:50])
+    print("training_background_predictions ", training_background_predictions[:50])
 
     print("Done.")
 
@@ -605,7 +637,7 @@ def draw_resonant_training_plots(model, dataset, output_folder, split_by_mass=Fa
     plotTools.draw_roc(binned_training_signal_predictions, binned_training_background_predictions, output_dir=output_folder, output_name="roc_curve",form=".pdf")
 
     #if split_by_mass:
-    if dataset.parametricDNN and split_by_mass:
+    if split_by_mass:
         output_folder = os.path.join(output_folder, 'splitted_by_mass')
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
@@ -680,14 +712,15 @@ if __name__ == "__main__":
 #features_store   = ['jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','hme_h2mass_reco','isSF', "mt2"]
     features_store   = ['jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','isSF', "mt2"] ##noHME
     features_store   = ['jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula','isSF', 'mt2','hme_h2mass_reco','jj_M'] ##with HME
-    features_store   = ['isSF', 'jj_pt','ll_pt','ll_M','ll_DR_l_l','jj_DR_j_j','llmetjj_DPhi_ll_jj','llmetjj_minDR_l_j','llmetjj_MTformula', 'mt2','hme_h2mass_reco','jj_M'] ##with HME
+    features_store = ['jj_pt', 'll_pt', 'll_M', 'll_DR_l_l', 'jj_DR_j_j', 'llmetjj_DPhi_ll_jj', 'llmetjj_minDR_l_j', 'llmetjj_MTformula', 'mt2', 'isSF', 'hme_h2mass_reco']
+    variablename = "MTandMT2HME"
     cut = "91-ll_M>15 && hme_h2mass_reco>=250"
     mass_list = [400]
-    mass_list = [400, 450, 500, 550, 600, 650]
+    #mass_list = [400, 450, 500, 550, 600, 650]
+    #mass_list = [260, 270, 300, 350, 400, 450, 500, 550, 600, 650, 750, 800, 900]
     parametricDNN = (len(mass_list) != 1)
 
-    variablename = "MTandMT2MjjHME"
-    suffix = str(epochs)+"epochs"
+    suffix = str(batch_size)+"batchsize_"+str(epochs)+"epochs"
     output_suffix = '{}_{:%Y-%m-%d}_{}'.format(variablename, datetime.date.today(), suffix)
     if parametricDNN:
         output_suffix = output_suffix+"_paramtricDNN"
@@ -705,8 +738,10 @@ if __name__ == "__main__":
     n_inputs = len(features_store)
     dataset, model = training_resonant(features_store, cut, mass_list , output_folder, output_model_filename)
 
+    #dataset, model = loadModelandData( features_store, cut, mass_list , output_model_filename) 
 
-    export_for_lwtnn(model, output_model_filename)
+
+    #export_for_lwtnn(model, output_model_filename)
 # Draw the inputs 
     draw_resonant_training_plots(model, dataset, output_folder, split_by_mass=parametricDNN)
     ###

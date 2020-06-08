@@ -21,6 +21,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 #sys.path.append("/Users/taohuang/Documents/DiHiggs/HH_Keras/HHTools/mvaTraining/")
 import DNNModelLUT
 
+from localSamplelist import *
 
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.Reset()
@@ -376,7 +377,7 @@ def array2tree(arr, branchnames, name='tree', tree=None):
     istring        = ROOT.istringstream(arr_str)
     #print('arr-str',arr_str)
     tree.ReadStream(istring, br_description)
-    tree.Scan()
+    #tree.Scan()
     return tree
 
 
@@ -399,6 +400,7 @@ def writeNNToTree(treename, input_file,  cut, modellist, modelLUT,  masslist, ou
     #alldataset = [np.ndarray(dataset[var]) for var in allinputs]
     allinputs = []
     alldataset = []
+    print("all branches ", dataset.keys())
     for var in dataset.keys():
     #for var in ['jj_pt', 'll_pt', 'll_M', 'll_DR_l_l', 'jj_DR_j_j', 'llmetjj_DPhi_ll_jj', 'llmetjj_minDR_l_j', 'llmetjj_MTformula', 'mt2', 'isSF', 'jj_M', 'hme_h2mass_reco']:
         if var != 'isSF':
@@ -418,15 +420,24 @@ def writeNNToTree(treename, input_file,  cut, modellist, modelLUT,  masslist, ou
 	modelfile = os.path.join(modelLUT[key]['workingdir'], "hh_resonant_trained_model.h5")
 	inputs = modelLUT[key]['inputs'] 
         parametricDNN = modelLUT[key]['parametricDNN'] 
+        mass_signal = None 
+        if not parametricDNN:  
+            mass_signal = key[-3:]
+            #print "parametricdDNN with training mass ", mass_signal, " ignore the signal ",input_file
+        if not parametricDNN and "Radion" in input_file and  mass_signal not in input_file: 
+            print "parametricdDNN with training mass ", mass_signal, " ignore the signal ",input_file
+            continue
         inputs = map(lambda x : x if x != 'isSF' else 'isSF_float', inputs)
         print "inputs ", inputs," model file ",modelfile
 	thismodel = keras.models.load_model(modelfile)
         for mass in masslist:	
+            if not parametricDNN and mass != int(mass_signal):
+                continue
             #thisdataset = np.array(a[inputs].tolist(), dtype=np.float32)
             thisdataset = np.vstack([dataset[var] for var in inputs]).T
             print "thisdataset ",thisdataset.shape, " ", thisdataset[:2]
             branchname = "nnout_%s_M%d"%(key,mass)
-            if parametricDNN:
+            if parametricDNN: 
                 masscol = [mass]*len(thisdataset)
                 thisdataset = np.c_[thisdataset, masscol]
 	    nnout = thismodel.predict(thisdataset, batch_size=5000, verbose=1)
@@ -464,30 +475,58 @@ def writeNNToTree(treename, input_file,  cut, modellist, modelLUT,  masslist, ou
 
 #
 #output_folder = os.path.join(outdir, output_suffix)
-output_folder = "./"
+output_folder = "20200604_adddedicatedNN/"
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
-cut = '91-ll_M>15 && hme_h2mass_reco>=250'
+#cut = '91-ll_M>15 && hme_h2mass_reco>=250'
+cut = "1"
 #modellist = ['MTonly','MTandMT2','MTandMT2_MJJ', 'MTandMT2_HME']
 #modellist = ['MTonly','MT2only','MTandMT2','MTandMT2_MJJ','MTandMT2_HME','MTandMT2_HMEMJJ', 'MTandMJJ']
 modellist = ['MTandMT2_HMEMJJ']
+modellist = ["MTandMT2_HMEMJJ_dedicatedDNN400", "MTandMT2_HMEMJJ_dedicatedDNN750","MTandMT2_HME_dedicatedDNN400","MTandMT2_HME_dedicatedDNN750"]
 #modellist = ['MTandMT2']
 #modellist = ['MTonly']
 #allfiles = os.listdir(filepath)
 #allfiles = ['TT_all.root']
+#output_file = "test_M400_MTandMT2_HMEMJJ.root"
+#filepath = "/Users/taohuang/Documents/DiHiggs/20180205_20180202_10k_Louvain_ALLNoSys/radion_M400_all.root"
+#filepath = "/Users/taohuang/Documents/DiHiggs/20180316_NanoAOD/20180619_HHbbWW_addHME_addSys_10k_addNN/DoubleMuon_HME_Friends_NN.root"
+#output_file = "DoubleMuon_2020NN.root"
 #treename = "evtreeHME_nn"
-writeNNToTree(treename, filepath, cut, modellist, DNNModelLUT.ModelLUT,  [400], output_file)
+#writeNNToTree(treename, filepath, cut, modellist, DNNModelLUT.ModelLUT,  [400, 750], output_file)
 def makeNtuple_prediction(masses):
      
     for shortname in full_local_samplelist.keys():    
+        if "untagged" not in shortname or "TT" in shortname :
+            continue
         for samplename in full_local_samplelist[shortname].keys():
             f = full_local_samplelist[shortname][samplename]['path']
             output_file = os.path.join(output_folder, samplename+"_2020DNN.root")
             print "file ",f," output ", output_file 
             treename = "evtreeHME_nn"
             if "Radion" in samplename: treename = "Friends"
+
+            ## for dedicated DNN, only a certain signal is consider
             writeNNToTree(treename, f, cut, modellist, DNNModelLUT.ModelLUT,  masses, output_file)
+        #sys.exit(0)
+            
+def makeNtuple_prediction_folder(masses, input_folder, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    allfiles = os.listdir(input_folder)
+    for f in allfiles:
+        if f.endwith('.root'):
+            filename  = f.split('/')[-1]
+            output_file = os.path.join(output_folder, filename[:-5]+"_2020DNN.root")
+            print "file ",f," output ", output_file 
+            treename = "evtreeHME_nn"
+            #if "Radion" in samplename: treename = "Friends"
+            ## for dedicated DNN, only a certain signal is consider
+            writeNNToTree(treename, f, cut, modellist, DNNModelLUT.ModelLUT,  masses, output_file)
+        #sys.exit(0)
+            
+
 
 ######## An example to add a branch to tree with DNN prediction:
 #treename = "t"
@@ -495,6 +534,7 @@ def makeNtuple_prediction(masses):
 #filepath = "/Users/taohuang/Documents/DiHiggs/20180205_20180202_10k_Louvain_ALLNoSys/radion_M400_all.root"
 
 #makeNtuple_prediction([260, 270, 300, 350, 400, 450, 500, 550, 600, 650, 750, 800, 900])
-#makeNtuple_prediction([260, 400])
+#makeNtuple_prediction([400, 750])
 #for model in modellist:
 #    plotmodel(SampleTypeLUT.ModelLUT, model, model+"_visualization.pdf")
+
